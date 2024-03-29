@@ -5,10 +5,16 @@ using System.Collections;
 using System.Drawing;
 using System.Drawing.Imaging;
 
+Console.InputEncoding = System.Text.Encoding.Unicode;
 
-if (!Directory.Exists("server\\data\\"))
+
+string absoluteDataDir = "";
+string dataDir = "\\server\\data\\";
+string currentDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
+absoluteDataDir = currentDirectory + dataDir;
+if (!Directory.Exists(absoluteDataDir))
 {
-    Directory.CreateDirectory("server\\data\\");
+    Directory.CreateDirectory(absoluteDataDir);
 }
 if (!File.Exists("indexes.txt"))
 {
@@ -27,7 +33,7 @@ try
     while (true) // Цикл для ожидания новых подключений
     {
         Socket client = await server.AcceptAsync();
-        Thread t = new Thread(async () => ProcessClientAsync(client));
+        Thread t = new Thread(async () => await ProcessClientAsync(client));
         t.Start();
     }
 }
@@ -55,7 +61,7 @@ async Task ProcessClientAsync(Socket client)
         else if (zpr[0] == "1")
         {
             byte[] resp = new byte[Convert.ToInt32(zpr[3])]; client.Receive(resp);
-            if (zpr[1].Contains("txt"))
+            if (zpr[2].Contains("txt"))
             {
                 PUT(client, zpr[2], filesTable, resp);
             }
@@ -85,7 +91,7 @@ async Task ProcessClientAsync(Socket client)
                 {
                     using (var ms = new MemoryStream())
                     {
-                        Image image = Image.FromFile("server\\data\\" + zpr[2]);
+                        Image image = Image.FromFile(absoluteDataDir + zpr[2]);
                         image.Save(ms, image.RawFormat);
                         await client.SendAsync(ms.ToArray(), SocketFlags.None);
                     }
@@ -99,7 +105,7 @@ async Task ProcessClientAsync(Socket client)
                 {
                     using (var ms = new MemoryStream())
                     {
-                        Image image = Image.FromFile("server\\data\\" + filesTable[zpr[2]]);
+                        Image image = Image.FromFile(absoluteDataDir + filesTable[zpr[2]]);
                         image.Save(ms, image.RawFormat);
                         await client.SendAsync(ms.ToArray(), SocketFlags.None);
                     }
@@ -140,13 +146,13 @@ async void PUT(Socket client, string fileName, Hashtable a, byte[] responseBytes
     {
         if (a.Contains(fileName))
         {
-            client.SendAsync(Encoding.UTF8.GetBytes("403"), SocketFlags.None);
+            await client.SendAsync(Encoding.UTF8.GetBytes("403"), SocketFlags.None);
         }
         else
         {
 
-            client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
-            using (var file = File.Open("server\\data\\" + fileName, FileMode.CreateNew, FileAccess.Write))
+            await client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
+            using (var file = File.Open(absoluteDataDir + fileName, FileMode.CreateNew, FileAccess.Write))
             {
                 file.Write(responseBytes);
             }
@@ -157,8 +163,8 @@ async void PUT(Socket client, string fileName, Hashtable a, byte[] responseBytes
     else
     {
 
-        client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
-        await using (var file = File.Open("server\\data\\" + voidId + ".txt", FileMode.CreateNew, FileAccess.Write))
+        await client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
+        await using (var file = File.Open(absoluteDataDir + voidId + ".txt", FileMode.CreateNew, FileAccess.Write))
         {
             file.Write(responseBytes);
         }
@@ -174,16 +180,16 @@ async void PUT_image(Socket client, string fileName, Hashtable a, byte[] respons
     {
         if (a.Contains(fileName))
         {
-            client.SendAsync(Encoding.UTF8.GetBytes("403"), SocketFlags.None);
+            await client.SendAsync(Encoding.UTF8.GetBytes("403"), SocketFlags.None);
         }
         else
         {
 
-            client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
+            await client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
             using (var ms = new MemoryStream(responseBytes))
             {
                 Image img = Image.FromStream(ms);
-                img.Save("server\\data\\" + fileName, ImageFormat.Png);
+                img.Save(absoluteDataDir + fileName, ImageFormat.Png);
                 ms.Close();
             }
             a.Add(voidId.ToString(), fileName);
@@ -193,11 +199,11 @@ async void PUT_image(Socket client, string fileName, Hashtable a, byte[] respons
     else
     {
 
-        client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
+        await client.SendAsync(Encoding.UTF8.GetBytes("202`" + voidId.ToString()), SocketFlags.None);
         using (var ms = new MemoryStream(responseBytes))
         {
             Image img = Image.FromStream(ms);
-            img.Save("server\\data\\" + voidId + ".png", ImageFormat.Png);
+            img.Save(absoluteDataDir + voidId + ".png", ImageFormat.Png);
             ms.Close();
         }
         a.Add(voidId.ToString(), voidId + ".png");

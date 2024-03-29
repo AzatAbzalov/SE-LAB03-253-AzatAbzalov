@@ -5,9 +5,15 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using static System.Net.Mime.MediaTypeNames;
 
-if (!Directory.Exists("client\\data\\"))
+Console.InputEncoding = System.Text.Encoding.Unicode;
+
+string absoluteDataDir = "";
+string dataDir = "\\client\\data\\";
+string currentDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
+absoluteDataDir = currentDirectory + dataDir;
+if (!Directory.Exists(absoluteDataDir))
 {
-    Directory.CreateDirectory("client\\data\\");
+    Directory.CreateDirectory(absoluteDataDir);
 }
 var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 try
@@ -64,7 +70,7 @@ try
             {
                 if (temp2.Contains("txt"))
                 {
-                    using (StreamWriter writer = new StreamWriter("client\\data\\" + "temp.txt", false))
+                    using (StreamWriter writer = new StreamWriter(absoluteDataDir + "temp.txt", false))
                     {
                         writer.Write(items[1]);
                         writer.Close();
@@ -83,8 +89,8 @@ try
                             break;
                         }
                     }
-                    File.Move("client\\data\\" + "temp.txt", "client\\data\\" + tempQ);
-                    File.Create("client\\data\\" + "temp.txt");
+                    File.Move(absoluteDataDir + "temp.txt", absoluteDataDir + tempQ);
+                    File.Create(absoluteDataDir + "temp.txt");
                 }
                 else
                 {
@@ -95,7 +101,7 @@ try
                     using (var ms12 = new MemoryStream(imageBytes))
                     {
                         System.Drawing.Image img = System.Drawing.Image.FromStream(ms12);
-                        img.Save("client\\data\\" + tempQ, img.RawFormat);
+                        img.Save(absoluteDataDir + tempQ, img.RawFormat);
                         ms12.Close();
                     }
                 }
@@ -183,9 +189,9 @@ async void saveFile(string fileName, string serverFile, Socket client, byte[] re
 {
     if (fileName.Contains("txt"))
     {
-        var e = new FileInfo("client\\data\\" + fileName).Length;
+        var e = new FileInfo(absoluteDataDir + fileName).Length;
         var msg = "1`1`" + serverFile + "`" + e + "`";
-        var msg1 = File.ReadAllText("client\\data\\" + fileName);
+        var msg1 = File.ReadAllText(absoluteDataDir + fileName);
         await client.SendAsync(Encoding.UTF8.GetBytes(msg), SocketFlags.None);
         await client.SendAsync(Encoding.UTF8.GetBytes(msg1), SocketFlags.None);
     }
@@ -195,7 +201,8 @@ async void saveFile(string fileName, string serverFile, Socket client, byte[] re
         byte[] ms1;
         using (var ms = new MemoryStream())
         {
-            System.Drawing.Image image = System.Drawing.Image.FromFile("client\\data\\" + fileName);
+            
+            System.Drawing.Image image = System.Drawing.Image.FromFile(absoluteDataDir + fileName);
             image.Save(ms, image.RawFormat);
             e = ms.Length;
             ms1 = ms.ToArray();
