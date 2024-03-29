@@ -120,7 +120,7 @@ try
                 Console.WriteLine("Enter name: >");
                 temp2 = Console.ReadLine();
                 Console.WriteLine("The request was sent.");
-                client.Send(Encoding.UTF8.GetBytes("3`1`" + temp2));
+                client.Send(Encoding.UTF8.GetBytes("3`1`" + temp2 + "`"));
 
             }
             else
